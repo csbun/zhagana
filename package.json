@@ -1,0 +1,17 @@
+{
+  "name": "zhagana",
+  "version": "1.0.0",
+  "description": "Step by step guide to use Playwright",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.5.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.3"
+  }
+}
