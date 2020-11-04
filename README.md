@@ -128,7 +128,7 @@ async function screenshot(browserType: BrowserType<Browser>) {
   // use `browserType` from arguments instead of hardcode
   const browser = await browserType.launch();
   // simulate browser behavior on a mobile device
-  const iphone = devices["iPhone 11 Pro Max"]
+  const iphone = devices['iPhone X'];
   const context = await browser.newContext({ ...iphone });
   // open web page
   const page = await context.newPage();
@@ -167,29 +167,138 @@ await page.waitForNavigation();
 await page.screenshot({ path: `out/map-${browserType.name()}.png` });
 ```
 
-Oops... Another blocker comes up: Google Maps want us to download App but we just want to **STAY ON WEB**.
+But, wait... there is a blocker comes up: Google Maps want us to download App but we just want to **STAY ON WEB**.
 
 ![webkit](resources/map-webkit-1.jpg)
 
-### Mouse Click
+### Input - Mouse Click
 
-So let's click the **STAY ON WEB** button on the page! From devtools we can get the selector of this button: `.ml-promotion-action-button`, use `page.click()` to trigger the click event:
+From devtools we can get the selector of this promo: `.ml-promotion-nonlu-blocking-promo`, use `page.waitForSelector()` instead of `page.waitForNavigation()` to catch the promotion:
 
-<!-- TODO: devtools scree -->
+![Devtools - Pop](resource/devtools-map-pop.png)
 
 ```ts
 await page.goto('https://www.google.com/maps');
-await page.waitForNavigation();
+await page.waitForSelector('.ml-promotion-nonlu-blocking-promo');
+```
+
+So let's click the **STAY ON WEB** button on the page! From devtools we can also get the selector of this button: `button.ml-promotion-action-button.ml-promotion-no-button`, use `page.click()` to trigger the click event:
+
+![Devtools - Button](resources/devtools-map-pop-button.png)
+
+```ts
 // click STAY ON WEB
-await page.click('button.ml-promotion-action-button');
+await page.click('button.ml-promotion-action-button.ml-promotion-no-button');
+```
+
+As the invisible animation last for 0.3s, we need to wait for more than 300ms after button clicked, before we capture the screenshot.
+
+![Devtools - Pop off](resources/devtools-map-pop-off.png)
+
+```ts
+// wait for more than 300 millisecond for browser to response with the events
+await page.waitForTimeout(400);
 await page.screenshot({ path: `out/map-${browserType.name
 ```
 
 ### Emulation - Geolocation
 
-reate a context with "geolocation" permissions granted:
+Now we have the map in our current location (may be base on IP address) but we also have the ability to simulate to a different place. We can "fly" to town _Tewo_ by
+reating a context with "geolocation" permissions granted:
 
+```ts
+const context = await browser.newContext({
+  ...iphone,
+  geolocation: {
+      longitude: 103.2199128,
+      latitude: 34.0556586,
+  },
+  permissions: ['geolocation'],
+});
+```
 
+If you don't konw the longitude and latitude of your "perfect place", just search it in Google Maps then you can get it from the browser URL.
+
+![search-location](resources/devtools-map-search-location.png)
+
+Click the **Your Location** button to navigate to our emulated geolocation.
+
+![Your Location](resources/devtools-map-your-location.png)
+
+```ts
+// click `your location` to navi to current location
+await page.click('button.ml-button-my-location-fab');
+// As I can not find any event which means relocat finished,
+// so we need to wait for some seconds for Google Maps to load resources
+await page.waitForTimeout(500);
+```
+
+Re-run our project we will find us located in _Tewo Post Bureau_.
+
+![Tewo](resources/map-chromium-tewo.png)
+
+### Input - Text Input
+
+After these simulations, we can start to control the page with more playwright APIs, just like what we click the page just now.
+
+First, fill in the search bar with our target place, like _Zhagana_.
+
+![Devtools - Click search box](resources/devtools-map-search-click.png)
+
+![Devtools - Search box input](resources/devtools-map-search-input.png)
+
+```ts
+await page.click()
+await page.fill('#TODO', 'Zhagana');
+```
+
+Second, click the Search button.
+
+```ts
+await page.click('TODO');
+```
+
+Third, click **Navigate** and google will provide us the navigation route.
+
+```ts
+await page.click('TODO');
+```
+
+Put them all together, with output path string as a result.
+
+```ts
+// TODO: all screenshot code...
+```
+
+<!-- TODO: 2 screenshot -->
+
+### Image Diff
+
+The 2 screenshots look exactly the same, so we can use some tools to check. [Pixelmatch](https://github.com/mapbox/pixelmatch) is a simple and fast JavaScript pixel-level image comparison library. Create a function to compare two file A and B.
+
+```ts
+async function diff(fileA: string, fileB: string) {
+  // read the 2 different PNG file
+  const mapChromium = PNG.sync.read(fs.readFileSync(fileA));
+  const mapWebkit = PNG.sync.read(fs.readFileSync(fileB));
+  // init the diff image buffer
+  const { width, height } = mapChromium;
+  const diffImg = new PNG({ width, height });
+  // pixel diff
+  pixelmatch(
+    mapChromium.data,
+    mapWebkit.data,
+    diffImg.data,
+    width,
+    height,
+    { threshold: 0.1 }
+  );
+  // print out the diff image
+  fs.writeFileSync('out/map-diff.png', PNG.sync.write(diffImg));
+}
+```
+
+<!-- TODO: diff image -->
 
 ## Postscript
 
