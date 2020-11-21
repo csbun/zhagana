@@ -88,13 +88,13 @@ async function diff(fileA: string, fileB: string) {
     chromium,
     // firefox,
     webkit
-  ]
+  ];
   // make screenshot all together
   const maps = await Promise.all(BROWSER_TYPES.map((browserType) => {
     console.log(`launch: ${browserType.name()}`);
     return screenshot(browserType);
   }));
 
-  diff(maps[0], maps[1]);
+  await diff(maps[0], maps[1]);
   console.log('done!');
 })();

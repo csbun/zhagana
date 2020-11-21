@@ -359,11 +359,30 @@ async function diff(fileA: string, fileB: string) {
 }
 ```
 
-<!-- TODO: diff image -->
+And call this function after we generated the two screenshots:
+
+```ts
+
+(async () => {
+  const BROWSER_TYPES = [ chromium, webkit ];
+  // make screenshot all together
+  const maps = await Promise.all(BROWSER_TYPES.map((browserType) => {
+    return screenshot(browserType);
+  }));
+
+  await diff(maps[0], maps[1]);
+})();
+```
+
+Bingo! Google Maps did a great jobs in the two different browser with almost the same behavior. The only different are font weight and also the navigate route weight.
+
+![map diff](resources/map-diff.png)
 
 ## Postscript
 
-> //TODO: Zhagana introduction
+Zhagana is a wonderful place in Tiewu County, Gannan (Tibetan Autonomous Prefecture), Gansu province, China. Zhagana means “Rock Box” in Tibetan language, which is fitting as it is surrounded by large rocky spires on all sides.
+
+![Zhagana](resources/IMG_4721.jpg)
 
 [pw]: https://playwright.dev
 [ts]: https://www.typescriptlang.org
