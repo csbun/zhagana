@@ -5,9 +5,11 @@ import * as pixelmatch from 'pixelmatch';
 
 async function screenshot(browserType: BrowserType<Browser>): Promise<string> {
   // use `browserType` from arguments instead of hardcode
-  const browser = await browserType.launch();
+  const browser = await browserType.launch({
+    // headless: false
+  });
   // simulate browser behavior on a mobile device
-  const iphone = devices['iPhone X'];
+  const iphone = devices['iPhone X']
   const context = await browser.newContext({
     ...iphone,
     geolocation: {
@@ -20,26 +22,40 @@ async function screenshot(browserType: BrowserType<Browser>): Promise<string> {
   const page = await context.newPage();
   await page.goto('https://www.google.com/maps');
   // https://www.google.com/maps/@-7.3281874,109.9076899,5z
-
   // await page.waitForNavigation();
-  await page.waitForSelector('.ml-promotion-nonlu-blocking-promo');
+
+  console.log(browserType.name(), 'pop');
+  await page.waitForSelector('.ml-promotion-on-screen');
   // click STAY ON WEB
   await page.click('button.ml-promotion-action-button.ml-promotion-no-button');
   // wait for more than 300 millisecond for browser to response with the events
-  await page.waitForTimeout(400);
-  // await page.waitForSelector('.ml-promotion-nonlu-blocking-promo.ml-promotion-off-screen')
+  // await page.waitForTimeout(400);
+
   // click `your location` to navi to current location
+  console.log(browserType.name(), 'my-location');
   await page.click('button.ml-button-my-location-fab');
-  // As I can not find any event which means relocat finished,
-  // so we need to wait for some seconds for Google Maps to load resources
-  await page.waitForTimeout(1000);
   
-  // click and fill in search target
+  // click to trigger input field
+  console.log(browserType.name(), 'input');
   await page.click('div.ml-searchbox-button-textarea');
   await page.waitForSelector('#ml-searchboxinput');
+  // fill in content
   await page.fill('#ml-searchboxinput', 'Zhagana');
+  // press Enter to start searching
+  await page.press('#ml-searchboxinput', 'Enter');
 
-  // take screenshot
+  // click Directions
+  console.log(browserType.name(), 'directions');
+  const directionsSelector = 'button[jsaction="pane.placeActions.directions"]'
+  await page.waitForSelector(directionsSelector);
+  await page.click(directionsSelector);
+  // wait for result
+  // As I can not find any event which means direction finished,
+  // so we need to wait for some seconds for Google Maps to load resources
+  await page.waitForTimeout(2000);
+
+  // take screenshot, output path string as a result.
+  console.log(browserType.name(), 'screenshot');
   const outputPath = `out/map-${browserType.name()}.png`;
   await page.screenshot({ path: outputPath });
   await browser.close();
@@ -71,14 +87,14 @@ async function diff(fileA: string, fileB: string) {
   const BROWSER_TYPES = [
     chromium,
     // firefox,
-    // webkit
+    webkit
   ]
   // make screenshot all together
-  await Promise.all(BROWSER_TYPES.map((browserType) => {
+  const maps = await Promise.all(BROWSER_TYPES.map((browserType) => {
     console.log(`launch: ${browserType.name()}`);
     return screenshot(browserType);
   }));
 
-  // diff();
+  diff(maps[0], maps[1]);
   console.log('done!');
 })();

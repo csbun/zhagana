@@ -147,7 +147,7 @@ Since firefox does not support mobile, we reduce our browsers to chromium and we
   const BROWSER_TYPES = [ chromium, webkit ]
   // make screenshot all together
   await Promise.all(BROWSER_TYPES.map((browserType) => {
-    console.log(`launch: ${browserType.name()}`);
+
     return screenshot(browserType);
   }));
 })();
@@ -157,7 +157,7 @@ Since firefox does not support mobile, we reduce our browsers to chromium and we
 
 | chromium | webkit |
 |:---:|:---:|
-| ![chromium](resources/map-chromium-1.jpg) | ![webkit](resources/map-webkit-1.jpg) |
+| ![chromium](resources/map-chromium-1.png) | ![webkit](resources/map-webkit-1.png) |
 
 Maps came out, but seems not complete loaded. So we need `.waitForNavigation()` after `page.goto()`:
 
@@ -169,13 +169,13 @@ await page.screenshot({ path: `out/map-${browserType.name()}.png` });
 
 But, wait... there is a blocker comes up: Google Maps want us to download App but we just want to **STAY ON WEB**.
 
-![webkit](resources/map-webkit-1.jpg)
+![webkit](resources/map-webkit-pop.png)
 
 ### Input - Mouse Click
 
 From devtools we can get the selector of this promo: `.ml-promotion-nonlu-blocking-promo`, use `page.waitForSelector()` instead of `page.waitForNavigation()` to catch the promotion:
 
-![Devtools - Pop](resource/devtools-map-pop.png)
+![Devtools - Pop](resources/devtools-map-pop.png)
 
 ```ts
 await page.goto('https://www.google.com/maps');
@@ -248,33 +248,94 @@ First, fill in the search bar with our target place, like _Zhagana_.
 ![Devtools - Search box input](resources/devtools-map-search-input.png)
 
 ```ts
-await page.click()
-await page.fill('#TODO', 'Zhagana');
+await page.click('div.ml-searchbox-button-textarea');
+await page.waitForSelector('#ml-searchboxinput');
+// fill in content
+await page.fill('#ml-searchboxinput', 'Zhagana');
 ```
 
-Second, click the Search button.
+Second, press `Enter` to search.
 
 ```ts
-await page.click('TODO');
+// press Enter to start searching
+await page.press('#ml-searchboxinput', 'Enter');
 ```
 
-Third, click **Navigate** and google will provide us the navigation route.
+After that, we will get the target place with a red point, and there should be a **Directions** button at the bottom of the page.
+
+![Devtools - Directions](resources/devtools-map-directions.png)
+
+Third, click **Directions** and google will provide us the navigation route.
 
 ```ts
-await page.click('TODO');
+// click Directions
+const directionsSelector = 'button[jsaction="pane.placeActions.directions"]'
+await page.waitForSelector(directionsSelector);
+await page.click(directionsSelector)
 ```
 
 Put them all together, with output path string as a result.
 
 ```ts
-// TODO: all screenshot code...
+async function screenshot(browserType: BrowserType<Browser>): Promise<string> {
+  // use `browserType` from arguments instead of hardcode
+  const browser = await browserType.launch();
+  // simulate browser behavior on a mobile device
+  const iphone = devices['iPhone X']
+  const context = await browser.newContext({
+    ...iphone,
+    geolocation: {
+      longitude: 103.2199128,
+      latitude: 34.0556586,
+    },
+    permissions: ['geolocation'],
+  });
+  // open web page
+  const page = await context.newPage();
+  await page.goto('https://www.google.com/maps');
+  // await page.waitForNavigation();
+
+  await page.waitForSelector('.ml-promotion-on-screen');
+  // click STAY ON WEB
+  await page.click('button.ml-promotion-action-button.ml-promotion-no-button');
+
+  // click `your location` to navi to current location
+  await page.click('button.ml-button-my-location-fab');
+  
+  // click to trigger input field
+  await page.click('div.ml-searchbox-button-textarea');
+  await page.waitForSelector('#ml-searchboxinput');
+  // fill in content
+  await page.fill('#ml-searchboxinput', 'Zhagana');
+  // press Enter to start searching
+  await page.press('#ml-searchboxinput', 'Enter');
+
+  // click Directions
+  const directionsSelector = 'button[jsaction="pane.placeActions.directions"]'
+  await page.waitForSelector(directionsSelector);
+  await page.click(directionsSelector);
+  // wait for result
+  // As I can not find any event which means direction finished,
+  // so we need to wait for some seconds for Google Maps to load resources
+  await page.waitForTimeout(2000);
+
+  // take screenshot, output path string as a result.
+  const outputPath = `out/map-${browserType.name()}.png`;
+  await page.screenshot({ path: outputPath });
+  await browser.close();
+  return outputPath;
+}
 ```
 
-<!-- TODO: 2 screenshot -->
+Okay! Here comes out the two maps screenshots:
+
+| chromium | webkit |
+|:---:|:---:|
+| ![chromium](resources/map-chromium-navigate.png) | ![webkit](resources/map-webkit-navigate.png) |
 
 ### Image Diff
 
-The 2 screenshots look exactly the same, so we can use some tools to check. [Pixelmatch](https://github.com/mapbox/pixelmatch) is a simple and fast JavaScript pixel-level image comparison library. Create a function to compare two file A and B.
+The 2 screenshots look exactly the same, but we still want to use some tools to check. [Pixelmatch](https://github.com/mapbox/pixelmatch) is a simple and fast JavaScript pixel-level image comparison library. Create a function to compare two file A and B.
 
 ```ts
 async function diff(fileA: string, fileB: string) {
