@@ -169,7 +169,7 @@ await page.screenshot({ path: `out/map-${browserType.name()}.png` });
 
 But, wait... there is a blocker comes up: Google Maps want us to download App but we just want to **STAY ON WEB**.
 
-<img alt="webkit" src="resources/map-webkit-pop.png" style="max-width:300px" />
+<img alt="webkit" src="resources/map-webkit-pop.png" width="300px" />
 
 ### Input - Mouse Click
 
@@ -235,7 +235,7 @@ await page.waitForTimeout(500);
 
 Re-run our project we will find us located in _Tewo Post Bureau_.
 
-<img alt="Tewo" src="resources/map-chromium-tewo.png" style="max-width:300px" />
+<img alt="Tewo" src="resources/map-chromium-tewo.png" width="300px" />
 
 ### Input - Text Input
 
@@ -376,7 +376,7 @@ And call this function after we generated the two screenshots:
 
 Bingo! Google Maps did a great job in the two different browser with almost the same behavior. The only different are font weight and also the navigate route weight.
 
-<img alt="Maps diff" src="resources/map-diff.png" style="max-width:300px" />
+<img alt="Maps diff" src="resources/map-diff.png" width="300px" />
 
 ## Postscript
 
