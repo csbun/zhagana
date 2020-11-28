@@ -157,7 +157,7 @@ Since firefox does not support mobile, we reduce our browsers to chromium and we
 
 | chromium | webkit |
 |:---:|:---:|
-| <img alt="chromium" src="resources/map-chromium-1.png" style="max-width:300px" /> | <img alt="webkit" src="resources/map-webkit-1.png" style="max-width:300px" /> |
+| ![chromium](resources/map-chromium-1.png) | ![webkit](resources/map-webkit-1.png) |
 
 Maps came out, but seems not complete loaded. So we need `.waitForNavigation()` after `page.goto()`:
 
@@ -331,7 +331,7 @@ Okay! Here comes out the two maps screenshots:
 
 | chromium | webkit |
 |:---:|:---:|
-| <img alt="chromium" src="resources/map-chromium-navigate.png" style="max-width:300px" /> | <img alt="webkit" src="resources/map-webkit-navigate.png" style="max-width:300px" /> |
+| ![chromium](resources/map-chromium-navigate.png) | ![webkit](resources/map-webkit-navigate.png) |
 
 ### Image Diff
 
